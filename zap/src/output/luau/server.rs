@@ -15,7 +15,7 @@ struct ServerOutput<'src> {
 	var_occurrences: HashMap<String, usize>,
 }
 
-impl<'a> Output for ServerOutput<'a> {
+impl Output for ServerOutput<'_> {
 	fn push(&mut self, s: &str) {
 		self.buf.push_str(s);
 	}

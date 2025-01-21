@@ -108,7 +108,7 @@ pub enum Report<'src> {
 	},
 }
 
-impl<'src> Report<'src> {
+impl Report<'_> {
 	pub fn severity(&self) -> Severity {
 		match self {
 			Self::LexerInvalidToken { .. } => Severity::Error,
