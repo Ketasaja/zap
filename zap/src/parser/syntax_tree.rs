@@ -2,6 +2,7 @@ use crate::config::{EvCall, EvSource, EvType, FnCall, NumTy};
 
 use super::reports::Span;
 
+#[allow(dead_code)]
 pub trait Spanned {
 	fn span(&self) -> Span;
 
