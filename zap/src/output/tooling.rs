@@ -11,7 +11,7 @@ struct ToolingOutput<'src> {
 	config: &'src Config<'src>,
 	tabs: u32,
 	buf: String,
-	var_occurences: HashMap<String, usize>,
+	var_occurrences: HashMap<String, usize>,
 }
 
 impl<'src> ToolingOutput<'src> {
@@ -20,7 +20,7 @@ impl<'src> ToolingOutput<'src> {
 			config,
 			tabs: 0,
 			buf: String::new(),
-			var_occurences: HashMap::new(),
+			var_occurrences: HashMap::new(),
 		}
 	}
 
@@ -124,7 +124,7 @@ impl<'src> ToolingOutput<'src> {
 			std::iter::once(ty),
 			&get_unnamed_values("value", 1),
 			true,
-			&mut self.var_occurences,
+			&mut self.var_occurrences,
 		);
 		self.push_stmts(statements);
 		self.push_line("return value");
@@ -184,7 +184,7 @@ impl<'src> ToolingOutput<'src> {
 				ev.data.iter().map(|parameter| &parameter.ty),
 				&get_unnamed_values("value", ev.data.len()),
 				true,
-				&mut self.var_occurences,
+				&mut self.var_occurrences,
 			);
 			self.push_stmts(statements);
 		}
@@ -250,7 +250,7 @@ impl<'src> ToolingOutput<'src> {
 					fn_decl.args.iter().map(|parameter| &parameter.ty),
 					&get_unnamed_values("value", fn_decl.args.len()),
 					true,
-					&mut self.var_occurences,
+					&mut self.var_occurrences,
 				);
 				self.push_stmts(statements);
 			}
@@ -280,7 +280,7 @@ impl<'src> ToolingOutput<'src> {
 					data,
 					&get_unnamed_values("value", data.len()),
 					true,
-					&mut self.var_occurences,
+					&mut self.var_occurrences,
 				);
 				self.push_stmts(statements);
 			}

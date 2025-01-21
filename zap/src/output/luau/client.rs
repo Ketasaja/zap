@@ -15,7 +15,7 @@ struct ClientOutput<'src> {
 	config: &'src Config<'src>,
 	tabs: u32,
 	buf: String,
-	var_occurences: HashMap<String, usize>,
+	var_occurrences: HashMap<String, usize>,
 }
 
 impl Output for ClientOutput<'_> {
@@ -44,7 +44,7 @@ impl<'src> ClientOutput<'src> {
 			config,
 			tabs: 0,
 			buf: String::new(),
-			var_occurences: HashMap::new(),
+			var_occurrences: HashMap::new(),
 		}
 	}
 
@@ -115,7 +115,7 @@ impl<'src> ClientOutput<'src> {
 			&[ty.clone()],
 			&["value".to_string()],
 			self.config.write_checks,
-			&mut self.var_occurences,
+			&mut self.var_occurrences,
 		);
 		self.push_stmts(&statements);
 		self.dedent();
@@ -124,7 +124,7 @@ impl<'src> ClientOutput<'src> {
 		self.push_line(&format!("function types.read_{name}()"));
 		self.indent();
 		self.push_line("local value;");
-		let statements = &des::gen(&[ty.clone()], &["value".to_string()], false, &mut self.var_occurences);
+		let statements = &des::gen(&[ty.clone()], &["value".to_string()], false, &mut self.var_occurrences);
 		self.push_stmts(&statements);
 		self.push_line("return value");
 		self.dedent();
@@ -236,7 +236,7 @@ impl<'src> ClientOutput<'src> {
 				ev.data.iter().map(|parameter| &parameter.ty),
 				&get_unnamed_values("value", ev.data.len()),
 				true,
-				&mut self.var_occurences,
+				&mut self.var_occurrences,
 			);
 			self.push_stmts(statements);
 		}
@@ -336,7 +336,7 @@ impl<'src> ClientOutput<'src> {
 				data,
 				&get_unnamed_values("value", data.len()),
 				true,
-				&mut self.var_occurences,
+				&mut self.var_occurrences,
 			);
 			self.push_stmts(&statements);
 		}
@@ -441,7 +441,7 @@ impl<'src> ClientOutput<'src> {
 				ev.data.iter().map(|parameter| &parameter.ty),
 				&get_unnamed_values("value", ev.data.len()),
 				self.config.write_checks,
-				&mut self.var_occurences,
+				&mut self.var_occurrences,
 			);
 			self.push_stmts(statements);
 		}
@@ -656,7 +656,7 @@ impl<'src> ClientOutput<'src> {
 				ev.data.iter().map(|parameter| &parameter.ty),
 				&get_named_values(value, &ev.data),
 				self.config.write_checks,
-				&mut self.var_occurences,
+				&mut self.var_occurrences,
 			);
 			self.push_stmts(statements);
 		}
@@ -929,7 +929,7 @@ impl<'src> ClientOutput<'src> {
 					fndecl.args.iter().map(|parameter| &parameter.ty),
 					&get_named_values(value, &fndecl.args),
 					self.config.write_checks,
-					&mut self.var_occurences,
+					&mut self.var_occurrences,
 				);
 				self.push_stmts(statements);
 			}
