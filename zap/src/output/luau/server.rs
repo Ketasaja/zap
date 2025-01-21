@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
 
 use crate::{
 	config::{Config, EvCall, EvDecl, EvSource, EvType, FnCall, FnDecl, NumTy, Parameter, TyDecl},
