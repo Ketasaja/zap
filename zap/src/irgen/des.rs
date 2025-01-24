@@ -350,6 +350,7 @@ impl Des<'_> {
 				),
 			),
 			Ty::Vector3 => self.push_assign(into, self.readvector3()),
+			Ty::Vector => self.push_assign(into, self.readvector()),
 
 			Ty::AlignedCFrame => {
 				let (axis_alignment_name, axis_alignment_expr) = self.add_occurrence("axis_alignment");

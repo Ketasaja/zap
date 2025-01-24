@@ -315,6 +315,11 @@ impl Ser<'_> {
 				self.push_writef32(from.clone().nindex("Y").into());
 				self.push_writef32(from.clone().nindex("Z").into());
 			}
+			Ty::Vector => {
+				self.push_writef32(from.clone().nindex("x").into());
+				self.push_writef32(from.clone().nindex("y").into());
+				self.push_writef32(from.clone().nindex("z").into());
+			}
 
 			Ty::AlignedCFrame => {
 				let (axis_alignment_name, axis_alignment_expr) = self.add_occurrence("axis_alignment");

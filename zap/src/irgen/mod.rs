@@ -209,6 +209,14 @@ pub trait Gen {
 		)
 	}
 
+	fn readvector(&self) -> Expr  {
+		Expr::Vector(
+			Box::new(self.readf32()),
+			Box::new(self.readf32()),
+			Box::new(self.readf32()),
+		)
+	}
+
 	fn push_write_copy(&mut self, expr: Expr, count: Expr) {
 		self.push_alloc(count.clone());
 
@@ -345,6 +353,7 @@ pub enum Expr {
 	// Datatypes
 	Color3(Box<Expr>, Box<Expr>, Box<Expr>),
 	Vector3(Box<Expr>, Box<Expr>, Box<Expr>),
+	Vector(Box<Expr>, Box<Expr>, Box<Expr>),
 
 	// Unary Operators
 	Len(Box<Expr>),
@@ -477,6 +486,7 @@ impl Display for Expr {
 
 			Self::Color3(x, y, z) => write!(f, "Color3.fromRGB({}, {}, {})", x, y, z),
 			Self::Vector3(x, y, z) => write!(f, "Vector3.new({}, {}, {})", x, y, z),
+			Self::Vector(x, y, z) => write!(f, "vector.create({}, {}, {})", x, y, z),
 
 			Self::Len(expr) => write!(f, "#{}", expr),
 			Self::Not(expr) => write!(f, "not {}", expr),

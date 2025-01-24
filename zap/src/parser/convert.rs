@@ -573,6 +573,7 @@ impl<'src> Converter<'src> {
 					"Color3" => Ty::Color3,
 					"Vector2" => Ty::Vector2,
 					"Vector3" => Ty::Vector3,
+					"vector" => Ty::Vector,
 					"AlignedCFrame" => Ty::AlignedCFrame,
 					"CFrame" => Ty::CFrame,
 					"unknown" => Ty::Opt(Box::new(Ty::Unknown)),
@@ -674,7 +675,7 @@ impl<'src> Converter<'src> {
 				match ref_name {
 					ref_name if ref_name == name => Some(*ref_ty),
 
-					"boolean" | "Color3" | "Vector3" | "AlignedCFrame" | "CFrame" | "unknown" => None,
+					"boolean" | "Color3" | "Vector3" | "vector" | "AlignedCFrame" | "CFrame" | "unknown" => None,
 
 					_ => {
 						if searched.contains(ref_name) {
