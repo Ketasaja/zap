@@ -209,7 +209,7 @@ pub trait Gen {
 		)
 	}
 
-	fn readvector(&self) -> Expr  {
+	fn readvector(&self) -> Expr {
 		Expr::Vector(
 			Box::new(self.readf32()),
 			Box::new(self.readf32()),
