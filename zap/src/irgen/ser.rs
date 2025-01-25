@@ -315,10 +315,27 @@ impl Ser<'_> {
 				self.push_writef32(from.clone().nindex("Y").into());
 				self.push_writef32(from.clone().nindex("Z").into());
 			}
-			Ty::Vector => {
-				self.push_writef32(from.clone().nindex("x").into());
-				self.push_writef32(from.clone().nindex("y").into());
-				self.push_writef32(from.clone().nindex("z").into());
+			Ty::Vector(x_ty, y_ty, z_ty) => {
+				match **x_ty {
+					Ty::Num(numty, _) => match numty {
+						_ => self.push_writenumty(from.clone().nindex("x").into(), numty),
+					},
+					_ => panic!(),
+				};
+
+				match **y_ty {
+					Ty::Num(numty, _) => match numty {
+						_ => self.push_writenumty(from.clone().nindex("y").into(), numty),
+					},
+					_ => panic!(),
+				};
+
+				match **z_ty {
+					Ty::Num(numty, _) => match numty {
+						_ => self.push_writenumty(from.clone().nindex("z").into(), numty),
+					},
+					_ => panic!(),
+				};
 			}
 
 			Ty::AlignedCFrame => {

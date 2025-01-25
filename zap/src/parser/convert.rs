@@ -525,6 +525,27 @@ impl<'src> Converter<'src> {
 					.unwrap_or_default(),
 			),
 
+			SyntaxTyKind::Vector(x_ty, y_ty, z_ty) => {
+				match self.ty(x_ty) {
+					Ty::Num(_, _) => (),
+					_ => self.report(Report::AnalyzeInvalidVectorType { span: Span {start: x_ty.start, end: x_ty.end} }),
+				};
+				match self.ty(y_ty) {
+					Ty::Num(_, _) => (),
+					_ => self.report(Report::AnalyzeInvalidVectorType { span: Span {start: y_ty.start, end: y_ty.end} }),
+				};
+				match self.ty(z_ty) {
+					Ty::Num(_, _) => (),
+					_ => self.report(Report::AnalyzeInvalidVectorType { span: Span {start: z_ty.start, end: z_ty.end} }),
+				};
+
+				Ty::Vector(
+					Box::new(self.ty(x_ty)),
+					Box::new(self.ty(y_ty)),
+					Box::new(self.ty(z_ty)),
+				)
+			}
+
 			SyntaxTyKind::Arr(ty, len) => Ty::Arr(
 				Box::new(self.ty(ty)),
 				len.map(|len| self.checked_range_within(&len, 0.0, u16::MAX as f64))
@@ -573,7 +594,6 @@ impl<'src> Converter<'src> {
 					"Color3" => Ty::Color3,
 					"Vector2" => Ty::Vector2,
 					"Vector3" => Ty::Vector3,
-					"vector" => Ty::Vector,
 					"AlignedCFrame" => Ty::AlignedCFrame,
 					"CFrame" => Ty::CFrame,
 					"unknown" => Ty::Opt(Box::new(Ty::Unknown)),

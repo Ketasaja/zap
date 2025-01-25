@@ -350,7 +350,22 @@ impl Des<'_> {
 				),
 			),
 			Ty::Vector3 => self.push_assign(into, self.readvector3()),
-			Ty::Vector => self.push_assign(into, self.readvector()),
+			Ty::Vector(x_ty, y_ty, z_ty) => {
+				let x_numty = match **x_ty {
+					Ty::Num(numty, _) => numty,
+					_ => panic!(),
+				};
+				let y_numty = match **y_ty {
+					Ty::Num(numty, _) => numty,
+					_ => panic!(),
+				};
+				let z_numty = match **z_ty {
+					Ty::Num(numty, _) => numty,
+					_ => panic!(),
+				};
+
+				self.push_assign(into, self.readvector(x_numty, y_numty, z_numty));
+			}
 
 			Ty::AlignedCFrame => {
 				let (axis_alignment_name, axis_alignment_expr) = self.add_occurrence("axis_alignment");

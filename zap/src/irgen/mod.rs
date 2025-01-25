@@ -209,11 +209,11 @@ pub trait Gen {
 		)
 	}
 
-	fn readvector(&self) -> Expr {
+	fn readvector(&self, x_numty: NumTy, y_numty: NumTy, z_numty: NumTy) -> Expr {
 		Expr::Vector(
-			Box::new(self.readf32()),
-			Box::new(self.readf32()),
-			Box::new(self.readf32()),
+			Box::new(self.readnumty(x_numty)),
+			Box::new(self.readnumty(y_numty)),
+			Box::new(self.readnumty(z_numty)),
 		)
 	}
 

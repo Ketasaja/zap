@@ -181,6 +181,7 @@ pub enum Ty<'src> {
 	Num(NumTy, Range),
 	Str(Range),
 	Buf(Range),
+	Vector(Box<Ty<'src>>, Box<Ty<'src>>, Box<Ty<'src>>),
 	Arr(Box<Ty<'src>>, Range),
 	Map(Box<Ty<'src>>, Box<Ty<'src>>),
 	Set(Box<Ty<'src>>),
@@ -197,7 +198,6 @@ pub enum Ty<'src> {
 	Color3,
 	Vector2,
 	Vector3,
-	Vector,
 	AlignedCFrame,
 	CFrame,
 	Boolean,
@@ -292,7 +292,50 @@ impl<'src> Ty<'src> {
 			Self::Color3 => (12, Some(12)),
 			Self::Vector2 => (8, Some(8)),
 			Self::Vector3 => (12, Some(12)),
-			Self::Vector => (12, Some(12)),
+			Self::Vector(x_ty, y_ty, z_ty) => {
+				let x_size = match **x_ty {
+					Ty::Num(numty, _) => match numty {
+						NumTy::U8 => 1,
+						NumTy::U16 => 2,
+						NumTy::U32 => 3,
+						NumTy::I8 => 1,
+						NumTy::I16 => 2,
+						NumTy::I32 => 4,
+						NumTy::F32 => 4,
+						NumTy::F64 => 8,
+					},
+					_ => panic!(),
+				};
+				let y_size = match **y_ty {
+					Ty::Num(numty, _) => match numty {
+						NumTy::U8 => 1,
+						NumTy::U16 => 2,
+						NumTy::U32 => 3,
+						NumTy::I8 => 1,
+						NumTy::I16 => 2,
+						NumTy::I32 => 4,
+						NumTy::F32 => 4,
+						NumTy::F64 => 8,
+					},
+					_ => panic!(),
+				};
+				let z_size = match **z_ty {
+					Ty::Num(numty, _) => match numty {
+						NumTy::U8 => 1,
+						NumTy::U16 => 2,
+						NumTy::U32 => 3,
+						NumTy::I8 => 1,
+						NumTy::I16 => 2,
+						NumTy::I32 => 4,
+						NumTy::F32 => 4,
+						NumTy::F64 => 8,
+					},
+					_ => panic!(),
+				};
+
+				let total = x_size + y_size + z_size;
+				(total, Some(total))
+			}
 			Self::AlignedCFrame => (13, Some(13)),
 			Self::CFrame => (24, Some(24)),
 			Self::Unknown => (0, None),
