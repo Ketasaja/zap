@@ -294,42 +294,15 @@ impl<'src> Ty<'src> {
 			Self::Vector3 => (12, Some(12)),
 			Self::Vector(x_ty, y_ty, z_ty) => {
 				let x_size = match **x_ty {
-					Ty::Num(numty, _) => match numty {
-						NumTy::U8 => 1,
-						NumTy::U16 => 2,
-						NumTy::U32 => 3,
-						NumTy::I8 => 1,
-						NumTy::I16 => 2,
-						NumTy::I32 => 4,
-						NumTy::F32 => 4,
-						NumTy::F64 => 8,
-					},
+					Ty::Num(numty, _) => numty.size(),
 					_ => unreachable!(),
 				};
 				let y_size = match **y_ty {
-					Ty::Num(numty, _) => match numty {
-						NumTy::U8 => 1,
-						NumTy::U16 => 2,
-						NumTy::U32 => 3,
-						NumTy::I8 => 1,
-						NumTy::I16 => 2,
-						NumTy::I32 => 4,
-						NumTy::F32 => 4,
-						NumTy::F64 => 8,
-					},
+					Ty::Num(numty, _) => numty.size(),
 					_ => unreachable!(),
 				};
 				let z_size = match **z_ty {
-					Ty::Num(numty, _) => match numty {
-						NumTy::U8 => 1,
-						NumTy::U16 => 2,
-						NumTy::U32 => 3,
-						NumTy::I8 => 1,
-						NumTy::I16 => 2,
-						NumTy::I32 => 4,
-						NumTy::F32 => 4,
-						NumTy::F64 => 8,
-					},
+					Ty::Num(numty, _) => numty.size(),
 					_ => unreachable!(),
 				};
 

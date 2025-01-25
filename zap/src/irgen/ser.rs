@@ -317,23 +317,17 @@ impl Ser<'_> {
 			}
 			Ty::Vector(x_ty, y_ty, z_ty) => {
 				match **x_ty {
-					Ty::Num(numty, _) => match numty {
-						_ => self.push_writenumty(from.clone().nindex("x").into(), numty),
-					},
+					Ty::Num(numty, _) => self.push_writenumty(from.clone().nindex("x").into(), numty),
 					_ => unreachable!(),
 				};
 
 				match **y_ty {
-					Ty::Num(numty, _) => match numty {
-						_ => self.push_writenumty(from.clone().nindex("y").into(), numty),
-					},
+					Ty::Num(numty, _) => self.push_writenumty(from.clone().nindex("y").into(), numty),
 					_ => unreachable!(),
 				};
 
 				match **z_ty {
-					Ty::Num(numty, _) => match numty {
-						_ => self.push_writenumty(from.clone().nindex("z").into(), numty),
-					},
+					Ty::Num(numty, _) => self.push_writenumty(from.clone().nindex("z").into(), numty),
 					_ => unreachable!(),
 				};
 			}
