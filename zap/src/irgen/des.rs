@@ -356,9 +356,9 @@ impl Des<'_> {
 						if self.checks {
 							self.push_range_check(into_expr.clone(), range);
 						}
-						
+
 						numty
-					},
+					}
 					_ => unreachable!(),
 				};
 				let y_numty = match **y_ty {
@@ -368,7 +368,7 @@ impl Des<'_> {
 						}
 
 						numty
-					},
+					}
 					_ => unreachable!(),
 				};
 				let z_numty = match **z_ty {
@@ -378,7 +378,7 @@ impl Des<'_> {
 						}
 
 						numty
-					},
+					}
 					_ => unreachable!(),
 				};
 

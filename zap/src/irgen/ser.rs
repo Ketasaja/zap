@@ -323,7 +323,7 @@ impl Ser<'_> {
 						}
 
 						self.push_writenumty(from.clone().nindex("x").into(), numty)
-					},
+					}
 					_ => unreachable!(),
 				};
 
@@ -334,7 +334,7 @@ impl Ser<'_> {
 						}
 
 						self.push_writenumty(from.clone().nindex("y").into(), numty)
-					},
+					}
 					_ => unreachable!(),
 				};
 
