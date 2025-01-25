@@ -304,7 +304,7 @@ impl<'src> Ty<'src> {
 						NumTy::F32 => 4,
 						NumTy::F64 => 8,
 					},
-					_ => panic!(),
+					_ => unreachable!(),
 				};
 				let y_size = match **y_ty {
 					Ty::Num(numty, _) => match numty {
@@ -317,7 +317,7 @@ impl<'src> Ty<'src> {
 						NumTy::F32 => 4,
 						NumTy::F64 => 8,
 					},
-					_ => panic!(),
+					_ => unreachable!(),
 				};
 				let z_size = match **z_ty {
 					Ty::Num(numty, _) => match numty {
@@ -330,7 +330,7 @@ impl<'src> Ty<'src> {
 						NumTy::F32 => 4,
 						NumTy::F64 => 8,
 					},
-					_ => panic!(),
+					_ => unreachable!(),
 				};
 
 				let total = x_size + y_size + z_size;

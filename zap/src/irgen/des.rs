@@ -353,15 +353,15 @@ impl Des<'_> {
 			Ty::Vector(x_ty, y_ty, z_ty) => {
 				let x_numty = match **x_ty {
 					Ty::Num(numty, _) => numty,
-					_ => panic!(),
+					_ => unreachable!(),
 				};
 				let y_numty = match **y_ty {
 					Ty::Num(numty, _) => numty,
-					_ => panic!(),
+					_ => unreachable!(),
 				};
 				let z_numty = match **z_ty {
 					Ty::Num(numty, _) => numty,
-					_ => panic!(),
+					_ => unreachable!(),
 				};
 
 				self.push_assign(into, self.readvector(x_numty, y_numty, z_numty));

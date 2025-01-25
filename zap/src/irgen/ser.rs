@@ -320,21 +320,21 @@ impl Ser<'_> {
 					Ty::Num(numty, _) => match numty {
 						_ => self.push_writenumty(from.clone().nindex("x").into(), numty),
 					},
-					_ => panic!(),
+					_ => unreachable!(),
 				};
 
 				match **y_ty {
 					Ty::Num(numty, _) => match numty {
 						_ => self.push_writenumty(from.clone().nindex("y").into(), numty),
 					},
-					_ => panic!(),
+					_ => unreachable!(),
 				};
 
 				match **z_ty {
 					Ty::Num(numty, _) => match numty {
 						_ => self.push_writenumty(from.clone().nindex("z").into(), numty),
 					},
-					_ => panic!(),
+					_ => unreachable!(),
 				};
 			}
 
