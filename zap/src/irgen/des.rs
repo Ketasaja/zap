@@ -352,15 +352,33 @@ impl Des<'_> {
 			Ty::Vector3 => self.push_assign(into, self.readvector3()),
 			Ty::Vector(x_ty, y_ty, z_ty) => {
 				let x_numty = match **x_ty {
-					Ty::Num(numty, _) => numty,
+					Ty::Num(numty, range) => {
+						if self.checks {
+							self.push_range_check(into_expr.clone(), range);
+						}
+						
+						numty
+					},
 					_ => unreachable!(),
 				};
 				let y_numty = match **y_ty {
-					Ty::Num(numty, _) => numty,
+					Ty::Num(numty, range) => {
+						if self.checks {
+							self.push_range_check(into_expr.clone(), range);
+						}
+
+						numty
+					},
 					_ => unreachable!(),
 				};
 				let z_numty = match **z_ty {
-					Ty::Num(numty, _) => numty,
+					Ty::Num(numty, range) => {
+						if self.checks {
+							self.push_range_check(into_expr.clone(), range);
+						}
+
+						numty
+					},
 					_ => unreachable!(),
 				};
 
