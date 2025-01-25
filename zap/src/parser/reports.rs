@@ -347,9 +347,9 @@ impl Report<'_> {
 				"ranges must be in the form `min..max`".to_string(),
 				"ranges can be invalid if `min` is greater than `max`".to_string(),
 			]),
-			Self::AnalyzeInvalidVectorType { .. } => Some(vec![
-				"only numeric types are valid vector components".to_string(),
-			]),
+			Self::AnalyzeInvalidVectorType { .. } => {
+				Some(vec!["only numeric types are valid vector components".to_string()])
+			}
 			Self::AnalyzeEmptyEnum { .. } => Some(vec![
 				"enums cannot be empty".to_string(),
 				"if you're looking to create an empty type, use a struct with no fields".to_string(),
