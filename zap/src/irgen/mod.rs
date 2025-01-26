@@ -213,11 +213,7 @@ pub trait Gen {
 		Expr::Vector(
 			Box::new(self.readnumty(x_numty)),
 			Box::new(self.readnumty(y_numty)),
-			if let Some(z_numty) = z_numty {
-				Some(Box::new(self.readnumty(z_numty)))
-			} else {
-				None
-			},
+			z_numty.map(|z_numty| Box::new(self.readnumty(z_numty)))
 		)
 	}
 

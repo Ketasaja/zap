@@ -559,10 +559,7 @@ impl<'src> Converter<'src> {
 				Ty::Vector(
 					Box::new(self.ty(x_ty)),
 					Box::new(self.ty(y_ty)),
-					match z_ty {
-						Some(z_ty) => Some(Box::new(self.ty(z_ty))),
-						None => None,
-					},
+					z_ty.as_ref().map(|z_ty| Box::new(self.ty(z_ty)))
 				)
 			}
 
