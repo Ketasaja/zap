@@ -295,16 +295,16 @@ impl<'src> Ty<'src> {
 			Self::Vector(x_ty, y_ty, z_ty) => {
 				let x_size = match **x_ty {
 					Ty::Num(numty, _) => numty.size(),
-					_ => unreachable!(),
+					_ => 0,
 				};
 				let y_size = match **y_ty {
 					Ty::Num(numty, _) => numty.size(),
-					_ => unreachable!(),
+					_ => 0,
 				};
 				let z_size = if let Some(z_ty) = z_ty {
 					match **z_ty {
 						Ty::Num(numty, _) => numty.size(),
-						_ => unreachable!(),
+						_ => 0,
 					}
 				} else {
 					0
