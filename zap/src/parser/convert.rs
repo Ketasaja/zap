@@ -544,7 +544,7 @@ impl<'src> Converter<'src> {
 						},
 					}),
 				};
-				if let Some(z_ty) = z_ty  {
+				if let Some(z_ty) = z_ty {
 					match self.ty(z_ty) {
 						Ty::Num(_, _) => (),
 						_ => self.report(Report::AnalyzeInvalidVectorType {

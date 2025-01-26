@@ -490,7 +490,13 @@ impl Display for Expr {
 
 			Self::Color3(x, y, z) => write!(f, "Color3.fromRGB({}, {}, {})", x, y, z),
 			Self::Vector3(x, y, z) => write!(f, "Vector3.new({}, {}, {})", x, y, z),
-			Self::Vector(x, y, z) => write!(f, "vector.create({}, {}, {})", x, y, z.clone().unwrap_or(Box::new(Expr::Num(0f64)))),
+			Self::Vector(x, y, z) => write!(
+				f,
+				"vector.create({}, {}, {})",
+				x,
+				y,
+				z.clone().unwrap_or(Box::new(Expr::Num(0f64)))
+			),
 
 			Self::Len(expr) => write!(f, "#{}", expr),
 			Self::Not(expr) => write!(f, "not {}", expr),

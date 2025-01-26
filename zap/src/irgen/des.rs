@@ -371,7 +371,7 @@ impl Des<'_> {
 					}
 					_ => unreachable!(),
 				};
-				let z_numty= if let Some(z_ty) = z_ty {
+				let z_numty = if let Some(z_ty) = z_ty {
 					match **z_ty {
 						Ty::Num(numty, range) => {
 							if self.checks {
