@@ -338,16 +338,18 @@ impl Ser<'_> {
 					_ => unreachable!(),
 				};
 
-				match **z_ty {
-					Ty::Num(numty, range) => {
-						if self.checks {
-							self.push_range_check(from_expr.clone(), range);
-						}
+				if let Some(z_ty) = z_ty  {
+					match **z_ty {
+						Ty::Num(numty, range) => {
+							if self.checks {
+								self.push_range_check(from_expr.clone(), range);
+							}
 
-						self.push_writenumty(from.clone().nindex("z").into(), numty)
-					}
-					_ => unreachable!(),
-				};
+							self.push_writenumty(from.clone().nindex("z").into(), numty)
+						}
+						_ => unreachable!(),
+					};
+				}
 			}
 
 			Ty::AlignedCFrame => {

@@ -544,20 +544,25 @@ impl<'src> Converter<'src> {
 						},
 					}),
 				};
-				match self.ty(z_ty) {
-					Ty::Num(_, _) => (),
-					_ => self.report(Report::AnalyzeInvalidVectorType {
-						span: Span {
-							start: z_ty.start,
-							end: z_ty.end,
-						},
-					}),
-				};
+				if let Some(z_ty) = z_ty  {
+					match self.ty(z_ty) {
+						Ty::Num(_, _) => (),
+						_ => self.report(Report::AnalyzeInvalidVectorType {
+							span: Span {
+								start: z_ty.start,
+								end: z_ty.end,
+							},
+						}),
+					};
+				}
 
 				Ty::Vector(
 					Box::new(self.ty(x_ty)),
 					Box::new(self.ty(y_ty)),
-					Box::new(self.ty(z_ty)),
+					match z_ty {
+						Some(z_ty) => Some(Box::new(self.ty(z_ty))),
+						None => None,
+					},
 				)
 			}
 

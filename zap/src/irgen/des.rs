@@ -371,15 +371,19 @@ impl Des<'_> {
 					}
 					_ => unreachable!(),
 				};
-				let z_numty = match **z_ty {
-					Ty::Num(numty, range) => {
-						if self.checks {
-							self.push_range_check(into_expr.clone(), range);
-						}
+				let z_numty= if let Some(z_ty) = z_ty {
+					match **z_ty {
+						Ty::Num(numty, range) => {
+							if self.checks {
+								self.push_range_check(into_expr.clone(), range);
+							}
 
-						numty
+							Some(numty)
+						}
+						_ => unreachable!(),
 					}
-					_ => unreachable!(),
+				} else {
+					None
 				};
 
 				self.push_assign(into, self.readvector(x_numty, y_numty, z_numty));

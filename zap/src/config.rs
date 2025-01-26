@@ -181,7 +181,7 @@ pub enum Ty<'src> {
 	Num(NumTy, Range),
 	Str(Range),
 	Buf(Range),
-	Vector(Box<Ty<'src>>, Box<Ty<'src>>, Box<Ty<'src>>),
+	Vector(Box<Ty<'src>>, Box<Ty<'src>>, Option<Box<Ty<'src>>>),
 	Arr(Box<Ty<'src>>, Range),
 	Map(Box<Ty<'src>>, Box<Ty<'src>>),
 	Set(Box<Ty<'src>>),
@@ -301,9 +301,13 @@ impl<'src> Ty<'src> {
 					Ty::Num(numty, _) => numty.size(),
 					_ => unreachable!(),
 				};
-				let z_size = match **z_ty {
-					Ty::Num(numty, _) => numty.size(),
-					_ => unreachable!(),
+				let z_size = if let Some(z_ty) = z_ty {
+					match **z_ty {
+						Ty::Num(numty, _) => numty.size(),
+						_ => unreachable!(),
+					}
+				} else {
+					0
 				};
 
 				let total = x_size + y_size + z_size;

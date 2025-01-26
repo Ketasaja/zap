@@ -209,11 +209,15 @@ pub trait Gen {
 		)
 	}
 
-	fn readvector(&self, x_numty: NumTy, y_numty: NumTy, z_numty: NumTy) -> Expr {
+	fn readvector(&self, x_numty: NumTy, y_numty: NumTy, z_numty: Option<NumTy>) -> Expr {
 		Expr::Vector(
 			Box::new(self.readnumty(x_numty)),
 			Box::new(self.readnumty(y_numty)),
-			Box::new(self.readnumty(z_numty)),
+			if let Some(z_numty) = z_numty {
+				Some(Box::new(self.readnumty(z_numty)))
+			} else {
+				None
+			},
 		)
 	}
 
@@ -353,7 +357,7 @@ pub enum Expr {
 	// Datatypes
 	Color3(Box<Expr>, Box<Expr>, Box<Expr>),
 	Vector3(Box<Expr>, Box<Expr>, Box<Expr>),
-	Vector(Box<Expr>, Box<Expr>, Box<Expr>),
+	Vector(Box<Expr>, Box<Expr>, Option<Box<Expr>>),
 
 	// Unary Operators
 	Len(Box<Expr>),
@@ -486,7 +490,7 @@ impl Display for Expr {
 
 			Self::Color3(x, y, z) => write!(f, "Color3.fromRGB({}, {}, {})", x, y, z),
 			Self::Vector3(x, y, z) => write!(f, "Vector3.new({}, {}, {})", x, y, z),
-			Self::Vector(x, y, z) => write!(f, "vector.create({}, {}, {})", x, y, z),
+			Self::Vector(x, y, z) => write!(f, "vector.create({}, {}, {})", x, y, z.clone().unwrap_or(Box::new(Expr::Num(0f64)))),
 
 			Self::Len(expr) => write!(f, "#{}", expr),
 			Self::Not(expr) => write!(f, "not {}", expr),
