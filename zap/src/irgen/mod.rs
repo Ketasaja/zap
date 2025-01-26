@@ -213,7 +213,7 @@ pub trait Gen {
 		Expr::Vector(
 			Box::new(self.readnumty(x_numty)),
 			Box::new(self.readnumty(y_numty)),
-			z_numty.map(|z_numty| Box::new(self.readnumty(z_numty)))
+			z_numty.map(|z_numty| Box::new(self.readnumty(z_numty))),
 		)
 	}
 
