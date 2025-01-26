@@ -237,8 +237,7 @@ Zap supports `vector`s with any numeric component types. The Z component is opti
 Omitting all components will emit `vector(f32, f32, f32)`.
 <CodeBlock code="type Position = vector" />
 
-Zap also supports serializing Vector3s, although zap has both a Vector3 type and a Vector2 type. Zap does not allow the use of Vector2s, and instead only allows Vector3s as Vector2s don't use Luau's native vector type and instead are allocated on the heap. And thus, Zap's Vector2 type is almost the same as the Vector3 type, except it doesn't serialize the Z axis.
-
+Zap also supports serializing `Vector3`, and to not serialise the `Z` property of a `Vector3`, you can use the `Vector2` type.
 
 ## DateTimes
 
