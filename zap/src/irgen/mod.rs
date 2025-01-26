@@ -491,7 +491,7 @@ impl Display for Expr {
 				"vector.create({}, {}, {})",
 				x,
 				y,
-				z.clone().unwrap_or(Box::new(Expr::Num(0f64)))
+				z.as_ref().unwrap_or(&Box::new(Expr::Num(0 as f64)))
 			),
 
 			Self::Len(expr) => write!(f, "#{}", expr),
