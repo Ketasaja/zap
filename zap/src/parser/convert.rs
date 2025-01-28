@@ -538,7 +538,7 @@ impl<'src> Converter<'src> {
 					match self.ty(z_ty) {
 						Ty::Num(numty, _) => {
 							if let NumTy::F64 = numty {
-								self.report(Report::AnalyzeInvalidVectorType {
+								self.report(Report::AnalyzeOversizeVectorComponent {
 									span: Span {
 										start: z_ty.start,
 										end: z_ty.end,
