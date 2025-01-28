@@ -168,7 +168,7 @@ impl Report<'_> {
 			Self::AnalyzePotentiallyOversizeUnreliable { .. } => "potentially oversize unreliable".to_string(),
 			Self::AnalyzeInvalidRange { .. } => "invalid range".to_string(),
 			Self::AnalyzeInvalidVectorType { .. } => "invalid vector type".to_string(),
-			Self::AnalyzeOversizeVectorComponent { .. } => "vectors cannot represent F64s".to_string(),
+			Self::AnalyzeOversizeVectorComponent { .. } => "vectors cannot represent f64s".to_string(),
 			Self::AnalyzeEmptyEnum { .. } => "empty enum".to_string(),
 			Self::AnalyzeEnumTagUsed { .. } => "enum tag used in variant".to_string(),
 			Self::AnalyzeInvalidOptValue { expected, .. } => format!("invalid opt value, expected {}", expected),
@@ -362,7 +362,7 @@ impl Report<'_> {
 				Some(vec!["only numeric types are valid vector components".to_string()])
 			}
 			Self::AnalyzeOversizeVectorComponent { .. } => {
-				Some(vec!["F64 is not a valid vector component".to_string()])
+				Some(vec!["f64 is not a valid vector component".to_string()])
 			}
 			Self::AnalyzeEmptyEnum { .. } => Some(vec![
 				"enums cannot be empty".to_string(),

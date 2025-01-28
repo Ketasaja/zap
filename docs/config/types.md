@@ -229,7 +229,7 @@ local CFrameSpecialCases = {
 
 ## Vectors `[0.6.17+]`
 
-Zap supports `vector`s with any numeric components other than `F64`. The Z component is optional, and will result in a `0` if omitted.
+Zap supports `vector`s with any numeric components other than `f64`. The Z component is optional, and will result in a `0` if omitted.
 
 <CodeBlock code="type Position = vector(f32, f32, f32)" />
 <CodeBlock code="type Size = vector(u8, f32)" />
