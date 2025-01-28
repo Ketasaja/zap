@@ -501,7 +501,7 @@ impl<'src> Converter<'src> {
 				match self.ty(x_ty) {
 					Ty::Num(numty, _) => {
 						if let NumTy::F64 = numty {
-							self.report(Report::AnalyzeInvalidVectorType {
+							self.report(Report::AnalyzeOversizeVectorComponent {
 								span: Span {
 									start: x_ty.start,
 									end: x_ty.end,
@@ -509,7 +509,7 @@ impl<'src> Converter<'src> {
 							});
 						}
 					}
-					_ => self.report(Report::AnalyzeInvalidVectorType {
+					_ => self.report(Report::AnalyzeOversizeVectorComponent {
 						span: Span {
 							start: x_ty.start,
 							end: x_ty.end,
@@ -519,7 +519,7 @@ impl<'src> Converter<'src> {
 				match self.ty(y_ty) {
 					Ty::Num(numty, _) => {
 						if let NumTy::F64 = numty {
-							self.report(Report::AnalyzeInvalidVectorType {
+							self.report(Report::AnalyzeOversizeVectorComponent {
 								span: Span {
 									start: y_ty.start,
 									end: y_ty.end,
