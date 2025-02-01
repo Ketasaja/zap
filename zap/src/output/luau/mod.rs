@@ -5,6 +5,7 @@ use crate::{
 
 pub mod client;
 pub mod server;
+pub mod types;
 
 pub trait Output {
 	fn push(&mut self, s: &str);
@@ -84,7 +85,14 @@ pub trait Output {
 	}
 
 	fn push_ty(&mut self, ty: &Ty) {
-		self.push("(");
+		if let Ty::Enum(enum_ty) = ty {
+			match enum_ty {
+				Enum::Unit { .. } => self.push("("),
+				Enum::Tagged { .. } => (),
+			};
+		} else {
+			self.push("(");
+		}
 
 		match ty {
 			Ty::Num(..) => self.push("number"),
@@ -133,12 +141,15 @@ pub trait Output {
 				),
 
 				Enum::Tagged { tag, variants } => {
-					for (i, (name, struct_ty)) in variants.iter().enumerate() {
+					for (i, (name, _)) in variants.iter().enumerate() {
 						if i != 0 {
-							self.push(" | ");
+							self.push("\t| ");
 						}
+						self.push(&format!("{name}{tag}\n"));
+					}
 
-						self.push("{\n");
+					for (name, struct_ty) in variants.iter() {
+						self.push(&format!("type {name}{tag} = {{\n"));
 						self.indent();
 
 						self.push_indent();
@@ -159,7 +170,7 @@ pub trait Output {
 						self.dedent();
 
 						self.push_indent();
-						self.push("}");
+						self.push("}\n");
 					}
 				}
 			},
@@ -195,7 +206,14 @@ pub trait Output {
 			Ty::CFrame => self.push("CFrame"),
 		}
 
-		self.push(")");
+		if let Ty::Enum(enum_ty) = ty {
+			match enum_ty {
+				Enum::Unit { .. } => self.push(")"),
+				Enum::Tagged { .. } => (),
+			};
+		} else {
+			self.push(")");
+		}
 	}
 
 	fn push_file_header(&mut self, scope: &str) {

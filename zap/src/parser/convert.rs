@@ -124,6 +124,7 @@ impl<'src> Converter<'src> {
 
 		let (server_output, ..) = self.str_opt("server_output", "network/server.lua", &config.opts);
 		let (client_output, ..) = self.str_opt("client_output", "network/client.lua", &config.opts);
+		let (types_output, ..) = self.str_opt("types_output", "", &config.opts);
 		let (tooling_output, ..) = self.str_opt("tooling_output", "network/tooling.lua", &config.opts);
 
 		let casing = self.casing_opt(&config.opts);
@@ -150,6 +151,7 @@ impl<'src> Converter<'src> {
 
 			server_output,
 			client_output,
+			types_output,
 			tooling_output,
 
 			casing,

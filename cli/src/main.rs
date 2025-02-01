@@ -69,6 +69,16 @@ fn main() -> Result<()> {
 			std::fs::write(file_path, defs)?;
 		}
 
+		if let Some(types_output) = code.types {
+			let types_path = config_path.parent().unwrap().join(types_output.path);
+
+			if let Some(parent) = types_path.parent() {
+				std::fs::create_dir_all(parent)?;
+			}
+
+			std::fs::write(types_path.clone(), types_output.code)?;
+		}
+
 		if let Some(tooling) = code.tooling {
 			let tooling_path = config_path.parent().unwrap().join(tooling.path);
 

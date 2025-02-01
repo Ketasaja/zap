@@ -39,6 +39,7 @@ pub struct Output {
 pub struct Code {
 	pub server: Output,
 	pub client: Output,
+	pub types: Option<Output>,
 	pub tooling: Option<Output>,
 }
 
@@ -78,6 +79,15 @@ pub fn run(input: &str, no_warnings: bool) -> Return {
 						path: config.client_output.into(),
 						code: output::luau::client::code(&config),
 						defs: output::typescript::client::code(&config),
+					},
+					types: if !config.types_output.is_empty() {
+						Some(Output {
+							path: config.types_output.into(),
+							code: output::luau::types::code(&config),
+							defs: None,
+						})
+					} else {
+						None
 					},
 					tooling: output::tooling::output(&config),
 				}),
