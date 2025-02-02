@@ -96,3 +96,6 @@ end
 load_empty()
 
 local types = {}
+
+local polling_queues = {}
+local empty_value = newproxy()

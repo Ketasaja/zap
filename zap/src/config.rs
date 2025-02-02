@@ -26,6 +26,7 @@ pub struct Config<'src> {
 	pub tooling_output: &'src str,
 
 	pub casing: Casing,
+	pub call_default: Option<EvCall>,
 	pub yield_type: YieldType,
 	pub async_lib: &'src str,
 	pub disable_fire_all: bool,
@@ -160,6 +161,7 @@ pub enum EvCall {
 	SingleAsync,
 	ManySync,
 	ManyAsync,
+	Polling,
 }
 
 #[derive(Debug, Clone)]

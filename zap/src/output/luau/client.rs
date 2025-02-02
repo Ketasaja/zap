@@ -1,7 +1,10 @@
-use std::{cmp::max, collections::HashMap};
+use std::{
+	cmp::max,
+	collections::{HashMap, HashSet},
+};
 
 use crate::{
-	config::{Config, EvCall, EvDecl, EvSource, EvType, FnDecl, Parameter, TyDecl, YieldType},
+	config::{Config, EvCall, EvDecl, EvSource, EvType, FnDecl, Parameter, Ty, TyDecl, YieldType},
 	irgen::{des, ser},
 	output::{
 		get_named_values, get_unnamed_values,
@@ -59,6 +62,7 @@ impl<'src> ClientOutput<'src> {
 
 		let fire = self.config.casing.with("Fire", "fire", "fire");
 		let set_callback = self.config.casing.with("SetCallback", "setCallback", "set_callback");
+		let iter = self.config.casing.with("Iter", "iter", "iter");
 		let on = self.config.casing.with("On", "on", "on");
 		let call = self.config.casing.with("Call", "call", "call");
 
@@ -76,6 +80,7 @@ impl<'src> ClientOutput<'src> {
 				match ev.call {
 					EvCall::SingleSync | EvCall::SingleAsync => self.push_line(&format!("{set_callback} = noop")),
 					EvCall::ManySync | EvCall::ManyAsync => self.push_line(&format!("{on} = noop")),
+					EvCall::Polling => self.push_line(&format!("{iter} = noop,")),
 				}
 			}
 
@@ -241,10 +246,30 @@ impl<'src> ClientOutput<'src> {
 			self.push_stmts(statements);
 		}
 
-		if ev.call == EvCall::SingleSync || ev.call == EvCall::SingleAsync {
-			self.push_line(&format!("if reliable_events[{id}] then"));
-		} else {
-			self.push_line(&format!("if reliable_events[{id}][1] then"));
+		match ev.call {
+			EvCall::SingleSync | EvCall::SingleAsync => self.push_line(&format!("if reliable_events[{id}] then")),
+			EvCall::ManySync | EvCall::ManyAsync => self.push_line(&format!("if reliable_events[{id}][1] then")),
+			EvCall::Polling => {
+				let arguments = (1..=ev.data.len())
+					.map(|i| {
+						if i == 1 {
+							"value".to_string()
+						} else {
+							format!("value{}", i)
+						}
+					})
+					.collect::<Vec<_>>();
+				if !ev.data.is_empty() {
+					for argument in arguments {
+						self.push_line(&format!(
+							"table.insert(polling_queues[{id}].events, if {} then {} else empty_value)",
+							argument, argument,
+						));
+					}
+				} else {
+					self.push_line(&format!("table.insert(polling_queues[{id}].events, empty_value)"));
+				}
+			}
 		}
 
 		self.indent();
@@ -259,6 +284,7 @@ impl<'src> ClientOutput<'src> {
 			EvCall::SingleAsync => self.push_line(&format!("task.spawn(reliable_events[{id}], {values})")),
 			EvCall::ManySync => self.push_line(&format!("cb({values})")),
 			EvCall::ManyAsync => self.push_line(&format!("task.spawn(cb, {values})")),
+			EvCall::Polling => (),
 		}
 
 		if ev.call == EvCall::ManySync || ev.call == EvCall::ManyAsync {
@@ -267,41 +293,44 @@ impl<'src> ClientOutput<'src> {
 		}
 
 		self.dedent();
-		self.push_line("else");
-		self.indent();
 
-		if !ev.data.is_empty() {
-			if ev.data.len() > 1 {
-				self.push_line(&format!("table.insert(reliable_event_queue[{id}], {{ {values} }})"));
+		if ev.call != EvCall::Polling {
+			self.push_line("else");
+			self.indent();
+
+			if !ev.data.is_empty() {
+				if ev.data.len() > 1 {
+					self.push_line(&format!("table.insert(reliable_event_queue[{id}], {{ {values} }})"));
+				} else {
+					self.push_line(&format!("table.insert(reliable_event_queue[{id}], value)"));
+				}
+
+				self.push_line(&format!("if #reliable_event_queue[{id}] > 64 then"));
 			} else {
-				self.push_line(&format!("table.insert(reliable_event_queue[{id}], value)"));
+				self.push_line(&format!("reliable_event_queue[{id}] += 1"));
+				self.push_line(&format!("if reliable_event_queue[{id}] > 16 then"));
 			}
 
-			self.push_line(&format!("if #reliable_event_queue[{id}] > 64 then"));
-		} else {
-			self.push_line(&format!("reliable_event_queue[{id}] += 1"));
-			self.push_line(&format!("if reliable_event_queue[{id}] > 16 then"));
+			self.indent();
+			self.push_indent();
+
+			self.push("warn(`[ZAP] {");
+
+			if !ev.data.is_empty() {
+				self.push("#")
+			}
+
+			self.push(&format!(
+				"reliable_event_queue[{id}]}} events in queue for {}. Did you forget to attach a listener?`)\n",
+				ev.name
+			));
+
+			self.dedent();
+			self.push_line("end");
+
+			self.dedent();
+			self.push_line("end");
 		}
-
-		self.indent();
-		self.push_indent();
-
-		self.push("warn(`[ZAP] {");
-
-		if !ev.data.is_empty() {
-			self.push("#")
-		}
-
-		self.push(&format!(
-			"reliable_event_queue[{id}]}} events in queue for {}. Did you forget to attach a listener?`)\n",
-			ev.name
-		));
-
-		self.dedent();
-		self.push_line("end");
-
-		self.dedent();
-		self.push_line("end");
 
 		self.dedent();
 	}
@@ -359,6 +388,22 @@ impl<'src> ClientOutput<'src> {
 		self.push_line(&format!("reliable_event_queue[{client_id}][call_id] = nil"));
 
 		self.dedent();
+	}
+
+	fn push_iter(&mut self, ev: &EvDecl) {
+		let iter = self.config.casing.with("Iter", "iter", "iter");
+		let id = ev.id;
+		self.push_indent();
+		self.push(&format!(
+			"{iter} = polling_queues[{id}].iterator :: () -> (() -> (number"
+		));
+		if !ev.data.is_empty() {
+			for argument in ev.data.iter() {
+				self.push(", ");
+				self.push_ty(&argument.ty);
+			}
+		}
+		self.push(")),\n");
 	}
 
 	fn push_reliable_footer(&mut self) {
@@ -441,6 +486,7 @@ impl<'src> ClientOutput<'src> {
 			EvCall::SingleAsync => self.push_line(&format!("task.spawn(unreliable_events[{id}], {values})")),
 			EvCall::ManySync => self.push_line(&format!("cb({values})")),
 			EvCall::ManyAsync => self.push_line(&format!("task.spawn(cb, {values})")),
+			EvCall::Polling => (),
 		}
 
 		if ev.call == EvCall::ManySync || ev.call == EvCall::ManyAsync {
@@ -817,11 +863,142 @@ impl<'src> ClientOutput<'src> {
 			match ev.call {
 				EvCall::SingleSync | EvCall::SingleAsync => self.push_return_setcallback(ev),
 				EvCall::ManySync | EvCall::ManyAsync => self.push_return_on(ev),
+				EvCall::Polling => self.push_iter(ev),
 			}
 
 			self.dedent();
 			self.push_line("},");
 		}
+	}
+
+	fn push_polling(&mut self) {
+		let filtered_evdecls = self
+			.config
+			.evdecls
+			.iter()
+			.filter(|evdecl| evdecl.from == EvSource::Server)
+			.filter(|evdecl| evdecl.call == EvCall::Polling);
+
+		let is_polling_used = filtered_evdecls.clone().next().is_some();
+		if is_polling_used {
+			self.push_line("");
+		}
+
+		for evdecl in filtered_evdecls {
+			let id = evdecl.id;
+			let mut return_names: Vec<String> = vec![];
+			let mut nullable_returns: HashSet<String> = HashSet::new();
+			for (index, parameter) in evdecl.data.iter().enumerate() {
+				let name = format!(
+					"value_{}{}",
+					index + 1,
+					if let Some(name) = parameter.name {
+						format!("_{}", name)
+					} else {
+						String::from("")
+					}
+				);
+				return_names.push(name.clone());
+				if let Ty::Opt(_) = parameter.ty {
+					nullable_returns.insert(name.clone());
+				}
+			}
+
+			self.push_line(&format!("polling_queues[{id}] = {{"));
+			self.indent();
+			self.push_line("events = {},");
+			self.push_line("cursor = 1,");
+			self.push_line("iterator = function()");
+			self.indent();
+			self.push_line(&format!("local queue = polling_queues[{id}]"));
+			self.push_line("local events = queue.events");
+			self.push_line("local index = 0");
+			self.push_line("local cursor = queue.cursor");
+			self.push_line("return function()");
+			self.indent();
+			self.push_line("index += 1");
+			self.push_indent();
+			self.push("local ");
+			if !evdecl.data.is_empty() {
+				self.push(&return_names.join(", "));
+				self.push(" = ");
+				for argument_index in 0..return_names.len() {
+					if argument_index > 0 {
+						self.push(", ");
+					}
+					self.push(&format!(
+						"events[{}]",
+						if argument_index > 0 {
+							format!("cursor + {}", argument_index)
+						} else {
+							String::from("cursor")
+						}
+					))
+				}
+				self.push("\n");
+
+				self.push_indent();
+				self.push("if ");
+				for (index, parameter) in evdecl.data.iter().enumerate() {
+					if index > 0 {
+						self.push(" and ");
+					}
+					self.push(&format!(
+						"value_{}{} == nil",
+						index + 1,
+						if let Some(name) = parameter.name {
+							format!("_{}", name)
+						} else {
+							String::from("")
+						}
+					));
+				}
+				self.push(" then\n");
+			} else {
+				self.push("value = events[cursor]\n");
+				self.push_line("if value == nil then");
+			}
+
+			self.indent();
+			self.push_line("queue.cursor = 1");
+			self.push_line("return nil");
+			self.dedent();
+			self.push_line("else");
+			self.indent();
+			for name in &return_names {
+				if nullable_returns.contains(name.as_str()) {
+					self.push_line(&format!("if {} == empty_value then", name));
+					self.indent();
+					self.push_line(&format!("{} = nil", name));
+					self.dedent();
+					self.push_line("end");
+				}
+			}
+			self.push_line("events[cursor] = nil");
+			for index in 1..return_names.len() {
+				if index > 0 {
+					self.push_line(&format!("events[cursor + {}] = nil", index));
+				}
+			}
+			let cursor_increase = if !evdecl.data.is_empty() { return_names.len() } else { 1 };
+			self.push_line(&format!("cursor += {}", cursor_increase));
+			// Update `queue.cursor` immediately too in case the loop body errors.
+			self.push_line(&format!("queue.cursor += {}", cursor_increase));
+			self.push_line(&format!(
+				"return index{}{}",
+				if evdecl.data.is_empty() { "" } else { ", " },
+				return_names.join(", ")
+			));
+			self.dedent();
+			self.push_line("end");
+			self.dedent();
+			self.push_line("end");
+			self.dedent();
+			self.push_line("end");
+			self.dedent();
+			self.push_line("}\n");
+		}
+		self.push_line("table.freeze(polling_queues)\n");
 	}
 
 	fn push_return_functions(&mut self) {
@@ -1053,6 +1230,8 @@ impl<'src> ClientOutput<'src> {
 		{
 			self.push_unreliable();
 		}
+
+		self.push_polling();
 
 		self.push_return();
 

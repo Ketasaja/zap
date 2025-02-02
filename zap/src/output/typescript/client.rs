@@ -99,25 +99,39 @@ impl<'src> ClientOutput<'src> {
 			.enumerate()
 			.filter(|(_, ev_decl)| ev_decl.from == EvSource::Server)
 		{
-			let set_callback = match ev.call {
-				EvCall::SingleSync | EvCall::SingleAsync => {
-					self.config.casing.with("SetCallback", "setCallback", "set_callback")
-				}
-				EvCall::ManySync | EvCall::ManyAsync => self.config.casing.with("On", "on", "on"),
-			};
 			let callback = self.config.casing.with("Callback", "callback", "callback");
 
 			self.push_line(&format!("export declare const {name}: {{", name = ev.name));
 			self.indent();
 
-			self.push_indent();
-			self.push(&format!("{set_callback}: ({callback}: ("));
+			if ev.call == EvCall::Polling {
+				self.push_indent();
+				let iter = self.config.casing.with("Iter", "iter", "iter");
+				self.push(&format!("{iter}: () => () => ["));
+				for (index, parameter) in ev.data.iter().enumerate() {
+					if index > 0 {
+						self.push(", ");
+					}
+					self.push_ty(&parameter.ty);
+				}
+				self.push("];\n");
+			} else {
+				let set_callback = match ev.call {
+					EvCall::SingleSync | EvCall::SingleAsync => {
+						self.config.casing.with("SetCallback", "setCallback", "set_callback")
+					}
+					EvCall::ManySync | EvCall::ManyAsync => self.config.casing.with("On", "on", "on"),
+					_ => todo!(),
+				};
 
-			if !ev.data.is_empty() {
-				self.push_parameters(&ev.data);
+				self.push_indent();
+				self.push(&format!("{set_callback}: ({callback}: ("));
+
+				if !ev.data.is_empty() {
+					self.push_parameters(&ev.data);
+				}
+				self.push(") => void) => () => void;\n");
 			}
-
-			self.push(") => void) => () => void;\n");
 
 			self.dedent();
 			self.push_line("};");

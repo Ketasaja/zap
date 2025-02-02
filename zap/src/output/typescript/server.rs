@@ -174,24 +174,40 @@ impl<'a> ServerOutput<'a> {
 			self.push_line(&format!("export declare const {name}: {{", name = ev.name));
 			self.indent();
 
-			let set_callback = match ev.call {
-				EvCall::SingleSync | EvCall::SingleAsync => {
-					self.config.casing.with("SetCallback", "setCallback", "set_callback")
+			if ev.call == EvCall::Polling {
+				self.push_indent();
+				let iter = self.config.casing.with("Iter", "iter", "iter");
+
+				self.push(&format!("{iter}: () => () => [Player, "));
+				for (index, parameter) in ev.data.iter().enumerate() {
+					if index > 0 {
+						self.push(", ");
+					}
+					self.push_ty(&parameter.ty);
 				}
-				EvCall::ManySync | EvCall::ManyAsync => self.config.casing.with("On", "on", "on"),
-			};
-			let callback = self.config.casing.with("Callback", "callback", "callback");
-			let player = self.config.casing.with("Player", "player", "player");
+				self.push("];\n");
+			} else {
+				let set_callback = match ev.call {
+					EvCall::SingleSync | EvCall::SingleAsync => {
+						self.config.casing.with("SetCallback", "setCallback", "set_callback")
+					}
+					EvCall::ManySync | EvCall::ManyAsync => self.config.casing.with("On", "on", "on"),
+					_ => todo!(),
+				};
 
-			self.push_indent();
-			self.push(&format!("{set_callback}: ({callback}: ({player}: Player"));
+				let callback = self.config.casing.with("Callback", "callback", "callback");
+				let player = self.config.casing.with("Player", "player", "player");
 
-			if !ev.data.is_empty() {
-				self.push(", ");
-				self.push_parameters(&ev.data);
+				self.push_indent();
+				self.push(&format!("{set_callback}: ({callback}: ({player}: Player"));
+
+				if !ev.data.is_empty() {
+					self.push(", ");
+					self.push_parameters(&ev.data);
+				}
+
+				self.push(") => void) => () => void;\n");
 			}
-
-			self.push(") => void) => () => void;\n");
 
 			self.dedent();
 			self.push_line("};");
