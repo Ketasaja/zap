@@ -1,10 +1,7 @@
-use std::{
-	cmp::max,
-	collections::{HashMap, HashSet},
-};
+use std::{cmp::max, collections::HashMap};
 
 use crate::{
-	config::{Config, EvCall, EvDecl, EvSource, EvType, FnCall, FnDecl, Parameter, Ty, TyDecl},
+	config::{Config, EvCall, EvDecl, EvSource, EvType, FnCall, FnDecl, Parameter, TyDecl},
 	irgen::{des, ser},
 	output::{get_named_values, get_unnamed_values, luau::events_table_name},
 };
@@ -17,6 +14,8 @@ struct ServerOutput<'src> {
 	buf: String,
 	var_occurrences: HashMap<String, usize>,
 }
+
+const INITIAL_POLLING_EVENT_CAPACITY: usize = 100;
 
 impl Output for ServerOutput<'_> {
 	fn push(&mut self, s: &str) {
@@ -259,7 +258,6 @@ impl<'a> ServerOutput<'a> {
 			EvCall::SingleSync | EvCall::SingleAsync => self.push_line(&format!("if reliable_events[{id}] then")),
 			EvCall::ManySync | EvCall::ManyAsync => self.push_line(&format!("for _, cb in reliable_events[{id}] do")),
 			EvCall::Polling => {
-				self.push_line(&format!("table.insert(polling_queues[{id}].players, player)"));
 				let arguments = (1..=ev.data.len())
 					.map(|i| {
 						if i == 1 {
@@ -269,16 +267,82 @@ impl<'a> ServerOutput<'a> {
 						}
 					})
 					.collect::<Vec<_>>();
-				if !ev.data.is_empty() {
-					for argument in arguments {
+				// player + arguments
+				let returns_length = 1 + arguments.len();
+
+				self.push_line(&format!("local queue = polling_queues[{id}]"));
+				self.push_line("-- `arguments` is a circular buffer.");
+				self.push_line("-- The table at `queue.arguments` can change when it needs to grow.");
+				self.push_line("-- It's indexed like `arguments[((cursor + increment - 1) % queue_size) + 1] because Luau has 1-based indexing.");
+				self.push_line("local arguments = queue.arguments");
+				self.push_line("local queue_size = queue.queue_size");
+				self.push_line("local read_cursor = queue.read_cursor");
+				self.push_line("local write_cursor = queue.write_cursor");
+				self.push_line(&format!(
+					"local unwrapped_write_end_cursor = write_cursor + {returns_length}"
+				));
+				self.push_line("local write_end_cursor = ((unwrapped_write_end_cursor - 1) % queue_size) + 1");
+
+				self.push_line("if (write_cursor < read_cursor and write_end_cursor >= read_cursor) or (unwrapped_write_end_cursor > queue_size and write_end_cursor >= read_cursor) then");
+				self.indent();
+				self.push_line("local new_queue_size = queue_size * 2");
+				self.push_line("local new_arguments = table.create(new_queue_size)");
+				self.push_line("local new_write_cursor");
+
+				self.push_line("if write_cursor >= read_cursor then");
+				self.indent();
+				self.push_line("table.move(arguments, read_cursor, write_cursor, 1, new_arguments)");
+				self.push_line("new_write_cursor = write_cursor - read_cursor + 1");
+				self.dedent();
+				self.push_line("else");
+				self.indent();
+				self.push_line("table.move(arguments, read_cursor, queue_size, 1, new_arguments)");
+				self.push_line("table.move(arguments, 1, write_cursor, (queue_size - read_cursor) + 1, new_arguments)");
+				self.push_line("new_write_cursor = write_cursor + (queue_size - read_cursor) + 1");
+				self.dedent();
+				self.push_line("end");
+
+				self.push_line("queue.arguments = new_arguments");
+				self.push_line("queue.queue_size = new_queue_size");
+				self.push_line("queue.read_cursor = 1");
+				self.push_line("queue.write_cursor = new_write_cursor");
+				self.push_line("new_arguments[new_write_cursor] = player");
+				for (index, argument) in arguments.iter().enumerate() {
+					if index > 0 {
 						self.push_line(&format!(
-							"table.insert(polling_queues[{id}].events, if {} then {} else empty_value)",
-							argument, argument,
+							"new_arguments[((new_write_cursor + {}) % new_queue_size) + 1] = {argument}",
+							index
+						));
+					} else {
+						self.push_line(&format!(
+							"new_arguments[(new_write_cursor % new_queue_size) + 1] = {argument}"
 						));
 					}
-				} else {
-					self.push_line(&format!("table.insert(polling_queues[{id}].events, empty_value)"));
 				}
+				self.push_line(&format!(
+					"queue.write_cursor = ((write_cursor + {}) % new_queue_size) + 1",
+					returns_length - 1
+				));
+				self.dedent();
+				self.push_line("else");
+				self.indent();
+				self.push_line("arguments[write_cursor] = player");
+				for (index, argument) in arguments.iter().enumerate() {
+					if index > 0 {
+						self.push_line(&format!(
+							"arguments[((write_cursor + {}) % queue_size) + 1] = {argument}",
+							index
+						));
+					} else {
+						self.push_line(&format!("arguments[(write_cursor % queue_size) + 1] = {argument}"));
+					}
+				}
+				self.push_line(&format!(
+					"queue.write_cursor = ((write_cursor + {}) % queue_size) + 1",
+					returns_length - 1
+				));
+				self.dedent();
+				self.push_line("end");
 			}
 		}
 
@@ -1071,10 +1135,9 @@ impl<'a> ServerOutput<'a> {
 
 		for evdecl in filtered_evdecls {
 			let id = evdecl.id;
-			let mut return_names: Vec<String> = vec![];
-			let mut nullable_returns: HashSet<String> = HashSet::new();
+			let mut return_names: Vec<String> = vec![String::from("player")];
 			for (index, parameter) in evdecl.data.iter().enumerate() {
-				let name = format!(
+				return_names.push(format!(
 					"value_{}{}",
 					index + 1,
 					if let Some(name) = parameter.name {
@@ -1082,109 +1145,82 @@ impl<'a> ServerOutput<'a> {
 					} else {
 						String::from("")
 					}
-				);
-				return_names.push(name.clone());
-				if let Ty::Opt(_) = parameter.ty {
-					nullable_returns.insert(name.clone());
-				}
+				));
 			}
+			let arguments_size = return_names.len();
 
 			self.push_line(&format!("polling_queues[{id}] = {{"));
 			self.indent();
-			self.push_line("events = {},");
-			self.push_line("players = {},");
-			self.push_line("cursor = 1,");
+
+			self.push_line(&format!(
+				"arguments = table.create({}),",
+				arguments_size * INITIAL_POLLING_EVENT_CAPACITY.max(1)
+			));
+			self.push_line(&format!(
+				"queue_size = {},",
+				arguments_size * INITIAL_POLLING_EVENT_CAPACITY.max(1)
+			));
+			self.push_line("read_cursor = 1,");
+			self.push_line("write_cursor = 1,");
 			self.push_line("iterator = function()");
 			self.indent();
+
 			self.push_line(&format!("local queue = polling_queues[{id}]"));
-			self.push_line("local events = queue.events");
-			self.push_line("local players = queue.players");
 			self.push_line("local index = 0");
-			self.push_line("local cursor = queue.cursor");
 			self.push_line("return function()");
 			self.indent();
+
 			self.push_line("index += 1");
+
+			self.push_line("if queue.read_cursor == queue.write_cursor then");
+			self.indent();
+
+			self.push_line("return nil");
+
+			// end `if queue.read_cursor == queue.write_cursor then`
+			self.dedent();
+			self.push_line("end");
+
+			// `queue` fields could be changed if the user yields while polling and more events are written that force the queue to grow.
+			// That's why these are defined inside the generator.
+			self.push_line("local arguments = queue.arguments");
+			self.push_line("local read_cursor = queue.read_cursor");
+			self.push_line("local queue_size = queue.queue_size");
 			self.push_indent();
 			self.push("local ");
-			if !evdecl.data.is_empty() {
-				self.push(&return_names.join(", "));
-				self.push(" = ");
-				for argument_index in 0..return_names.len() {
+			self.push(&return_names.join(", "));
+			self.push(" = ");
+			for argument_index in 0..return_names.len() {
+				if argument_index > 0 {
+					self.push(", ");
+				}
+				self.push(&format!(
+					"arguments[{}]",
 					if argument_index > 0 {
-						self.push(", ");
+						format!("((read_cursor + {}) % queue_size) + 1", argument_index - 1)
+					} else {
+						String::from("read_cursor")
 					}
-					self.push(&format!(
-						"events[{}]",
-						if argument_index > 0 {
-							format!("cursor + {}", argument_index)
-						} else {
-							String::from("cursor")
-						}
-					))
-				}
-
-				self.push_indent();
-				self.push("if ");
-				for (index, parameter) in evdecl.data.iter().enumerate() {
-					if index > 0 {
-						self.push(" and ");
-					}
-					self.push(&format!(
-						"value_{}{} == nil",
-						index + 1,
-						if let Some(name) = parameter.name {
-							format!("_{}", name)
-						} else {
-							String::from("")
-						}
-					));
-				}
-				self.push(" then\n");
-			} else {
-				self.push("value = events[cursor]\n");
-				self.push_line("if value == nil then");
+				));
 			}
-			self.indent();
-			self.push_line("players[index] = nil");
-			self.push_line("queue.cursor = 1");
-			self.push_line("return nil");
-			self.dedent();
-			self.push_line("else");
-			for name in &return_names {
-				if nullable_returns.contains(name.as_str()) {
-					self.push_line(&format!("if {} == empty_value then", name));
-					self.indent();
-					self.push_line(&format!("{} = nil", name));
-					self.dedent();
-					self.push_line("end");
-				}
-			}
-			self.indent();
-			self.push_line("events[cursor] = nil");
-			for index in 1..return_names.len() {
-				if index > 0 {
-					self.push_line(&format!("events[cursor + {}] = nil", index));
-				}
-			}
-			let cursor_increase = if !evdecl.data.is_empty() { return_names.len() } else { 1 };
-			self.push_line(&format!("cursor += {}", cursor_increase));
-			// Update `queue.cursor` immediately too in case the loop body errors.
-			self.push_line(&format!("queue.cursor += {}", cursor_increase));
-			self.push_line("local player = players[index]");
-			self.push_line("players[index] = nil");
+			self.push("\n");
 			self.push_line(&format!(
-				"return index, player{}{}",
-				if evdecl.data.is_empty() { "" } else { ", " },
-				return_names.join(", ")
+				"queue.read_cursor = ((queue.read_cursor + {}) % queue.queue_size) + 1",
+				arguments_size - 1
 			));
+			self.push_line(&format!("return index, {}", return_names.join(", ")));
+
+			// dedent generator
 			self.dedent();
 			self.push_line("end");
+
+			// dedent iterator
 			self.dedent();
-			self.push_line("end");
+			self.push_line("end,");
+
+			// dedent queue definition
 			self.dedent();
-			self.push_line("end");
-			self.dedent();
-			self.push_line("}\n");
+			self.push_line("}");
 		}
 		self.push_line("table.freeze(polling_queues)\n");
 	}
