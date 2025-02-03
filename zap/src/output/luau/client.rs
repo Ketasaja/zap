@@ -262,8 +262,8 @@ impl<'src> ClientOutput<'src> {
 
 				self.push_line(&format!("local queue = polling_queues[{id}]"));
 				self.push_line("-- `arguments` is a circular buffer.");
-				self.push_line("-- The table at `queue.arguments` can change when it needs to grow.");
-				self.push_line("-- It's indexed like `arguments[((cursor + increment - 1) % queue_size) + 1] because Luau has 1-based indexing.");
+				self.push_line("-- `queue.arguments` can be replaced when it needs to grow.");
+				self.push_line("-- It's indexed like `arguments[((index - 1) % queue_size) + 1] because Luau has 1-based indexing.");
 				self.push_line("local arguments = queue.arguments");
 				self.push_line("local queue_size = queue.queue_size");
 				self.push_line("local read_cursor = queue.read_cursor");
